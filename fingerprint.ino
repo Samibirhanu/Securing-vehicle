@@ -30,7 +30,6 @@ Adafruit_Fingerprint_Due finger = Adafruit_Fingerprint_Due();
 void setup()  
 {
   Serial.begin(9600);
-  Serial.println("fingertest");
   pinMode(2,OUTPUT);
   pinMode(3,OUTPUT);
 
@@ -38,13 +37,6 @@ void setup()
   // set the data rate for the sensor serial port
   finger.begin(57600);
   
-  if (finger.verifyPassword()) {
-    Serial.println("Found fingerprint sensor!");
-  } else {
-    Serial.println("Did not find fingerprint sensor :(");
-    while (1);
-  }
-  Serial.println("Waiting for valid finger...");
 }
 
 void loop()                     // run over and over again
@@ -63,22 +55,22 @@ int getFingerprintIDez() {
   if (p != FINGERPRINT_OK)
   {
     Serial.println("Finger Print do not match!");
-  digitalWrite(3, HIGH);
-  delay(100);
- digitalWrite(3, LOW);
+    digitalWrite(3, HIGH);
+    delay(100);
+    digitalWrite(3, LOW);
     return -1;
   } 
   else {
     Serial.println("Found a print match!");
-  digitalWrite(2, HIGH);
-  delay(100);
- digitalWrite(2, LOW);
+    digitalWrite(2, HIGH);
+    delay(100);
+    digitalWrite(2, LOW);
  
   }
   // found a match!
-  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
-  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+    Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+    Serial.print(" with confidence of "); Serial.println(finger.confidence);
   
-  return finger.fingerID; 
+    return finger.fingerID; 
 }
 
