@@ -1,0 +1,106 @@
+String incomingMessage = "";
+String senderNumber = "";
+bool messageReceived = false;
+
+void setup()
+{
+  // Start communication with the SIM900 on Serial3 (pins 14 and 15)
+  Serial3.begin(9600);
+  Serial.begin(9600);
+
+  // Configure pin 2 as an output
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW); // Ensure pin 2 is initially LOW
+
+  delay(1000); // Wait for module to initialize
+
+  Serial.println("Initializing...");
+  sendATCommand("AT"); // Check if module is ready
+
+  sendATCommand("AT+CMGF=1"); // Set SMS mode to text
+
+  sendATCommand("AT+CNMI=1,2,0,0,0"); // Configure the module to receive SMS messages automatically
+
+  Serial.println("Ready to receive messages.");
+}
+
+void loop()
+{
+  // Continuously update and check for new messages
+  updateSerial();
+}
+
+void sendATCommand(String cmd)
+{
+  Serial3.println(cmd);
+  delay(1000); // Wait for the command to be processed
+  updateSerial();
+}
+
+void updateSerial()
+{
+  while (Serial.available())
+  {
+    Serial3.write(Serial.read()); // Forward data to Serial3 port
+  }
+  while (Serial3.available())
+  {
+    char c = Serial3.read();
+    Serial.write(c); // Forward data to Serial port
+
+    incomingMessage += c;
+
+    // Check for new message indicator +CMT:
+    if (incomingMessage.indexOf("+CMT:") != -1)
+    {
+      messageReceived = true;
+
+      // Extract the sender number
+      int firstQuote = incomingMessage.indexOf('"', incomingMessage.indexOf("+CMT:") + 5);
+      int secondQuote = incomingMessage.indexOf('"', firstQuote + 1);
+      senderNumber = incomingMessage.substring(firstQuote + 1, secondQuote);
+      Serial.println("Sender Number: " + senderNumber);
+    }
+
+    // Check if the message content has started
+    if (messageReceived && incomingMessage.indexOf("\r\n", incomingMessage.indexOf("+CMT:")) != -1)
+    {
+      int messageStart = incomingMessage.indexOf("\r\n", incomingMessage.indexOf("+CMT:")) + 2;
+      if (incomingMessage.indexOf("\r\n", messageStart) != -1)
+      {
+        String messageContent = incomingMessage.substring(messageStart, incomingMessage.indexOf("\r\n", messageStart));
+        messageContent.trim();
+        Serial.println("Incoming Message: " + messageContent);
+
+        // Process the message
+        processMessage(messageContent, senderNumber);
+
+        // Clear the buffers
+        incomingMessage = "";
+        senderNumber = "";
+        messageReceived = false;
+      }
+    }
+  }
+}
+
+void processMessage(String message, String sender)
+{
+  // Check if the sender is the authorized number
+  if (sender == "+251946710563")
+  {
+    // Convert message to lowercase for case-insensitive comparison
+    message.toLowerCase();
+
+    // Check if the message contains "enginecut"
+    if (message.indexOf("enginecut") != -1)
+    {
+      Serial.println("Enginecut command received from authorized number");
+      digitalWrite(2, HIGH); // Set pin 2 HIGH
+    }
+  }
+  else
+  {
+    Serial.println("Message received from unauthorized number: " + sender);
+  }
+}
